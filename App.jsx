@@ -20,7 +20,7 @@ function App() {
 
   return (
            
-    <View style={{flex: 1}}>
+    <View className=" flex-1 border-8 border-green-500 rounded-[10px]">
   <NavigationContainer>
     <TabNav.Navigator
       screenOptions={{

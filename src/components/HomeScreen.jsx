@@ -1,24 +1,12 @@
 import React from "react";
 import { Image, Text, View } from "react-native";
 import Icon from "react-native-ionicons";
-import { StyleSheet, Platform } from 'react-native';
+// import { StyleSheet, Platform } from 'react-native';
 
 function HomeScreen() {
 
 
 
-
-const fontFamilies = {
-  KaushanScript: Platform.OS === 'ios' ? 'KaushanScript-Regular' : 'KaushanScriptRegular',
-};
-
-const styles = StyleSheet.create({
-  logoText: {
-    fontFamily: fontFamilies.KaushanScript,
-    // Ajoutez d'autres styles si nécessaire, comme la taille de la police
-    fontSize: 24,
-  },
-});
 
 
 
@@ -27,11 +15,14 @@ const styles = StyleSheet.create({
 
     return (
         <View>
-            <View style={{ flexDirection: 'row' , alignItems: 'center'}}>
+            {/* <View style={{ flexDirection: 'row' , alignItems: 'center'}}> */}
+            <View className="flex-row items-center" >
                 <Image source={require('../assets/images/logo.png')}></Image>
-                <Text style={styles.logoText}>WeekEats</Text>
+                {/* <Text style={styles.logoText}>WeekEats</Text> */}
+                <Text >WeekEats</Text>
             </View>
-            <Text>Home</Text>
+            <Text className="mt-2 text-lg text-red-500 dark:text-white">Home philig -boss</Text>
+           
             <Icon name="ios-home" size={50} color="red" />
         </View>
     );
