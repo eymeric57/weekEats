@@ -7,18 +7,17 @@ import HomeScreen from './src/screens/OnlineScreens/HomeScreen';
 import CalendarScreen from './src/screens/OnlineScreens/CalendarScreen';
 import CartScreen from './src/screens/OnlineScreens/CartScreen';
 import Register from './src/screens/OfflineScreens/Register';
-import { View } from 'react-native';
+import { View, ActivityIndicator } from 'react-native';
 import Login from './src/screens/OfflineScreens/Login';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProfileScreen from './src/screens/OnlineScreens/ProfileScreen';
 import { Provider } from 'react-redux';
 import store from './src/redux/store';
 
-function MainTabs() {
+function MainTabs({ setIsSignedIn } ) {
   const TabNav = createBottomTabNavigator();
 
   return (
-    <Provider store={store}>
     <TabNav.Navigator
       screenOptions={{
         tabBarStyle: {
@@ -75,11 +74,13 @@ function MainTabs() {
       />
       <TabNav.Screen
         name="Profil"
-        component={ProfileScreen}
+        children={() => <ProfileScreen setIsSignedIn={setIsSignedIn} />}
+        
+      
         options={{
           tabBarIcon: ({ focused }) => (
             <Icon
-              name="cart"
+              name="person"
               size={30}
               color={focused ? '#639068' : 'grey'}
             />
@@ -88,55 +89,73 @@ function MainTabs() {
         }}
       />
     </TabNav.Navigator>
-    </Provider>
   );
 }
 
 function App() {
   const Stack = createNativeStackNavigator();
   const [isSignedIn, setIsSignedIn] = React.useState(false);
+  const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
-    const checkToken = async () => {
-      const token = await AsyncStorage.getItem('userToken');
-      if (token) {
-        setIsSignedIn(true);
+    const authConnexion = async () => {
+      try {
+        const authentification = await AsyncStorage.getItem('user');
+        if (authentification) {
+          setIsSignedIn(true);
+       
+        }
+      } catch (error) {
+        console.error('Erreur lors de la vérification de l\'authentification:', error);
+      }finally{
+        setIsLoading(false);
       }
     };
-    checkToken();
+
+    authConnexion();
   }, []);
+
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#639067" />
+      </View>
+    );
+  }
 
   return (
     <Provider store={store}>
-    <View style={{ flex: 1, backgroundColor: 'black' }}>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: 'white',
-          overflow: 'hidden',
-          borderLeftWidth: 9,
-          borderRightWidth: 9,
-          borderLeftColor: '#639067',
-          borderRightColor: '#639067',
-        }}>
-        <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {isSignedIn ? (
-              <Stack.Screen name="MainTabs" component={MainTabs} />
-            ) : (
-              <>   
-               <Stack.Screen name="Login">
-                  {(props) => <Login {...props} setIsSignedIn={setIsSignedIn} />}
-                </Stack.Screen> 
-              <Stack.Screen name="Register">
-                  {(props) => <Register {...props} setIsSignedIn={setIsSignedIn} />}
+      <View style={{ flex: 1, backgroundColor: 'black' }}>
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'white',
+            overflow: 'hidden',
+            borderLeftWidth: 9,
+            borderRightWidth: 9,
+            borderLeftColor: '#639067',
+            borderRightColor: '#639067',
+          }}>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              {isSignedIn ? (
+                <Stack.Screen name="MainTabs" >
+                  {(props) => <MainTabs {...props}  setIsSignedIn={setIsSignedIn} />}
                 </Stack.Screen>
-              </>
-            )}
-          </Stack.Navigator>
-        </NavigationContainer>
+              ) : (
+                <>   
+                  <Stack.Screen name="Login">
+                    {(props) => <Login {...props} setIsSignedIn={setIsSignedIn} />}
+                  </Stack.Screen> 
+                  <Stack.Screen name="Register">
+                    {(props) => <Register {...props} setIsSignedIn={setIsSignedIn} />}
+                  </Stack.Screen>
+                </>
+              )}
+            </Stack.Navigator>
+          </NavigationContainer>
+        </View>
       </View>
-    </View>
     </Provider>
   );
 }

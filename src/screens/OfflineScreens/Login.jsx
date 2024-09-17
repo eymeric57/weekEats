@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TextInput, Button, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, Text, View, SafeAreaView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { useDispatch } from 'react-redux';
 import { setUserDetail } from '../../redux/user/UserSlice';
 import api from '../../axiosConfig';
@@ -9,6 +9,7 @@ const Login = ({ navigation, setIsSignedIn }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSubmit = async () => {
     setIsLoading(true);
@@ -44,79 +45,57 @@ const Login = ({ navigation, setIsSignedIn }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>Connexion</Text>
-      <View style={styles.inputContainer}>
-        <View>
-          <Text style={styles.label}>Adresse email</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={setEmail}
-            value={email}
-            placeholder="Entrez votre email"
-            keyboardType="email-address"
-          />
-        </View>
-        <View>
-          <Text style={styles.label}>Mot de passe</Text>
-          <TextInput
-            style={styles.input}
-            onChangeText={setPassword}
-            value={password}
-            placeholder="Entrez votre mot de passe"
-            secureTextEntry
-          />
-        </View>
-        <Button
-          title={isLoading ? 'Connexion en cours...' : "C'est parti"}
-          color="#639067"
-          onPress={handleSubmit}
-          disabled={isLoading}
+    <SafeAreaView className="flex-1 p-4 bg-white">
+      <Text  style={{ fontFamily: 'KaushanScript-Regular' }}  className="font-kaushan text-4xl text-[#639067] text-center mt-8 mb-5">Connexion</Text>
+
+      <View className="mb-5">
+        <Text  style={{ fontFamily: 'KaushanScript-Regular' }}  className="text-[#639067] text-xl font-bold mb-1">Adresse email</Text>
+        <TextInput
+          className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+          placeholder="Votre email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
         />
       </View>
 
-      <View>
-        <Text>
-          Pas encore de compte ?{' '}
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text style={{ color: 'blue' }}>S'inscrire</Text>
-          </TouchableOpacity>
+      <View className="mb-5">
+        <Text  style={{ fontFamily: 'KaushanScript-Regular' }}  className="text-[#639067] text-xl font-bold mb-1">Mot de passe</Text>
+        <TextInput
+          className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+          placeholder="Votre mot de passe"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+      </View>
+
+      {error && <Text className="text-red-500 text-center mb-2.5">{error}</Text>}
+
+      {isLoading ? (
+        <ActivityIndicator size="small" color="#639067" />
+      ) : (
+        <TouchableOpacity className="bg-[#639067] rounded-lg p-2.5 items-center mt-5" onPress={handleSubmit}>
+          <Text  className="text-[#ffffff] text-xl font-bold">C'est parti</Text>
+        </TouchableOpacity>
+      )}
+
+      <Text className="text-center font-bold mt-5 text-sm">
+        Pas encore de compte ?{' '}
+        <Text className="text-[#639067] font-bold" onPress={() => navigation.navigate('Register')}>
+          S'inscrire
         </Text>
+      </Text>
+
+      <View className="items-center mt-4.5">
+        <Image
+          className="w-[150px] h-[120px]"
+          source={require('../../assets/images/logo.png')}
+        />
+        <Text style={{ fontFamily: 'KaushanScript-Regular' }} className="font-kaushan text-4xl text-[#639067]">WeekEats</Text>
       </View>
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    padding: 16,
-    marginTop: 100,
-  },
-  title: {
-    fontFamily: 'KaushanScript-Regular',
-    fontSize: 50,
-    color: '#639067',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  inputContainer: {
-    gap: 16,
-  },
-  label: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#639067',
-    marginBottom: 5,
-  },
-  input: {
-    height: 40,
-    marginBottom: 12,
-    padding: 10,
-    borderRadius: 8,
-    backgroundColor: '#D9D9D9',
-  },
-});
 
 export default Login;
