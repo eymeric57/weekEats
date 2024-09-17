@@ -10,11 +10,15 @@ import Register from './src/screens/OfflineScreens/Register';
 import { View } from 'react-native';
 import Login from './src/screens/OfflineScreens/Login';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import ProfileScreen from './src/screens/OnlineScreens/ProfileScreen';
+import { Provider } from 'react-redux';
+import store from './src/redux/store';
 
 function MainTabs() {
   const TabNav = createBottomTabNavigator();
 
   return (
+    <Provider store={store}>
     <TabNav.Navigator
       screenOptions={{
         tabBarStyle: {
@@ -71,7 +75,7 @@ function MainTabs() {
       />
       <TabNav.Screen
         name="Profil"
-        component={CartScreen}
+        component={ProfileScreen}
         options={{
           tabBarIcon: ({ focused }) => (
             <Icon
@@ -84,6 +88,7 @@ function MainTabs() {
         }}
       />
     </TabNav.Navigator>
+    </Provider>
   );
 }
 
@@ -102,6 +107,7 @@ function App() {
   }, []);
 
   return (
+    <Provider store={store}>
     <View style={{ flex: 1, backgroundColor: 'black' }}>
       <View
         style={{
@@ -121,19 +127,17 @@ function App() {
               <>   
                <Stack.Screen name="Login">
                   {(props) => <Login {...props} setIsSignedIn={setIsSignedIn} />}
-                </Stack.Screen>
-               <Stack.Screen name="Register">
+                </Stack.Screen> 
+              <Stack.Screen name="Register">
                   {(props) => <Register {...props} setIsSignedIn={setIsSignedIn} />}
                 </Stack.Screen>
-             
-             
-               
               </>
             )}
           </Stack.Navigator>
         </NavigationContainer>
       </View>
     </View>
+    </Provider>
   );
 }
 

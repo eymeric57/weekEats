@@ -1,15 +1,26 @@
+import { useRoute } from '@react-navigation/native';
 import React from 'react';
 import {Image, Text, View} from 'react-native';
+import { useSelector } from 'react-redux';
+import { selectUserData } from '../../redux/user/UserSelector';
 
 
 function HomeScreen() {
+
+  const route = useRoute();
+  const { userId } = route.params || {};
+
+       const { userDetail } = useSelector(selectUserData);
+       const nickname = userDetail?.name ?? "Pas de pseudo";
+
+
   return (
     <View className="flex-1 bg-white rounded-lg shadow-lg">
     {/* En-tête avec logo et salutation */}
     <View className="flex-row items-center justify-center gap-4 mb-2">
       <Image source={require('../../assets/images/logo.png')} style={{ width: 100, height:100 }} />
       <Text className="text-2xl font-bold text-[#639067]">
-        Bonjour, Manon !
+        Bonjour, {nickname} !
       </Text>
     </View>
 

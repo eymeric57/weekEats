@@ -1,67 +1,54 @@
 import React, { useState } from 'react';
-import { StyleSheet, Text, View, SafeAreaView, TextInput, Button} from 'react-native';
+import { StyleSheet, Text, View, SafeAreaView, TextInput, Button, TouchableOpacity } from 'react-native';
+import { useDispatch } from 'react-redux';
+import { setUserDetail } from '../../redux/user/UserSlice';
+import api from '../../axiosConfig';
 
-
-
-import axios from 'axios';
-import { API_ROOT } from '../../constants/apiConstants';
-
-
-const Login = ({ setIsSignedIn }) => {
-  //on va déclarer nos states
+const Login = ({ navigation, setIsSignedIn }) => {
+  const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
- 
-  //méthode qui receptionne les données du formulaire
-  const handleSubmit = () => {
-  //empeche le fonctionnement par défaut du formulaire
-    setIsLoading(true); //on met le loader en marche
-    axios.post(`${API_ROOT}/login`, {
-      email, password
-    }).then((response) => {
-      
-      //si l'utilisateur a bien été enregistré en bdd l'api nous retourne un objet user (dans response.data)
-      if (response.data.email) {
-        //on reconstruit un objet user pour notre context d'authentification
-        const user = {
-          userId: response.data.id,
-          email: response.data.email,
-          
-        }
-        //on appelle la méthode signIn pour enrtegistrer notre utilisateur dans le context
-        setIsSignedIn(true);
-        try {
-          
-          setIsLoading(false);
-           //on redirige l'utilisateur vers la page d'accueil du router Online
-        } catch (error) {
-          setIsLoading(false);
-          console.log(`Erreur lors de la création de la session: ${error}`);
-        }
-      } else {
-        setIsLoading(false);
-        console.log(`Erreur lors de la réponse du serveur: ${response}`);
-      }
-    }).catch((error) => {
-      setIsLoading(false);
-    
-      console.log(`Erreur lors de la connexion de l'user': ${error}`);
-    })
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.post('/login', { email, password });
+      console.log('Réponse du serveur:', response.data);
 
-  }
+      if (response.data.id) {
+        dispatch(setUserDetail({
+          id: response.data.id,
+          email: response.data.email,
+          name: response.data.name,
+          surname: response.data.surname,
+        }));
+        setIsSignedIn(true);
+      } else {
+        console.log(`Erreur: Pas d'ID dans la réponse du serveur`);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la connexion de l\'utilisateur:', error.message);
+      if (error.response) {
+        console.error('Response data:', error.response.data);
+        console.error('Response status:', error.response.status);
+        console.error('Response headers:', error.response.headers);
+      } else if (error.request) {
+        console.error('Request data:', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.title}>
-        Connexion
-      </Text>
+      <Text style={styles.title}>Connexion</Text>
       <View style={styles.inputContainer}>
         <View>
-          <Text style={styles.label}>
-            Adresse email
-          </Text>
+          <Text style={styles.label}>Adresse email</Text>
           <TextInput
             style={styles.input}
             onChangeText={setEmail}
@@ -71,9 +58,7 @@ const Login = ({ setIsSignedIn }) => {
           />
         </View>
         <View>
-          <Text style={styles.label}>
-            Mot de passe
-          </Text>
+          <Text style={styles.label}>Mot de passe</Text>
           <TextInput
             style={styles.input}
             onChangeText={setPassword}
@@ -83,10 +68,20 @@ const Login = ({ setIsSignedIn }) => {
           />
         </View>
         <Button
-          title="C'est parti"
+          title={isLoading ? 'Connexion en cours...' : "C'est parti"}
           color="#639067"
           onPress={handleSubmit}
+          disabled={isLoading}
         />
+      </View>
+
+      <View>
+        <Text>
+          Pas encore de compte ?{' '}
+          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+            <Text style={{ color: 'blue' }}>S'inscrire</Text>
+          </TouchableOpacity>
+        </Text>
       </View>
     </SafeAreaView>
   );
