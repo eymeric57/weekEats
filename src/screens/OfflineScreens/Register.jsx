@@ -14,6 +14,9 @@ import {CommonActions, useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {API_ROOT} from '../../constants/apiConstants';
 import {useAuthContext} from '../../contexts/AuthContext';
+import { USER_INFOS } from '../../constants/appConstants';
+import { useDispatch } from 'react-redux';
+import { setUserDetail } from '../../redux/user/UserSlice';
 
 const Register = ({ setIsSignedIn }) => {
   const [email, setEmail] = useState('');
@@ -25,6 +28,7 @@ const Register = ({ setIsSignedIn }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
   const {signIn} = useAuthContext();
+  const dispatch = useDispatch();
   // const [isSignedIn, setIsSignedIn] = React.useState(false);
 
   const navigation = useNavigation();
@@ -71,7 +75,7 @@ const Register = ({ setIsSignedIn }) => {
         email,
         password,
       });  
-  setIsSignedIn(true);
+ 
       console.log('Utilisateur enregistré avec succès:', registerResponse.data);
 
       // Supposons que la réponse contient les informations de l'utilisateur
@@ -83,10 +87,15 @@ const Register = ({ setIsSignedIn }) => {
         name: userData.name,
       };
 
+      
+      dispatch(setUserDetail(user));
+       await signIn(user);
+       setIsSignedIn(true);
+        console.log('Connexion reussie');
+    
       // Utiliser signIn du contexte pour connecter l'utilisateur
-     await signIn(user);
-
-    } catch (error) {
+    
+    }catch (error) {
       console.log('Erreur:', error.response?.data || error.message);
       if (error.response?.data?.message) {
         setError(error.response.data.message);

@@ -12,10 +12,11 @@ function ProfileScreen({ setIsSignedIn }) {
   const userName = userDetail?.name || 'Nom non disponible';
   const { signOut } = useAuthContext();
 
-  async function handleLogout() {
+  const handleLogout = async () => {
     try {
       await signOut();
-      setIsSignedIn(false);
+
+    setIsSignedIn(false);
       Alert.alert('Déconnexion', 'Vous avez été déconnecté avec succès.');
     } catch (error) {
       console.error('Erreur lors de la déconnexion:', error.message);

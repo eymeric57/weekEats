@@ -1,13 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import userReducer from './user/UserSlice';
+import mealReducer from './meal/PlaningSlice';
 
-
-//on crée notre magasin de données
 const store = configureStore({
   reducer: {
-    // on declarera ici les reducers
-    users: userReducer
-  }
-})
+    users: userReducer,
+    planning: mealReducer,
+  },
+});
 
 export default store;

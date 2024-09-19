@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Icon from 'react-native-vector-icons/Ionicons';
 import HomeScreen from './src/screens/OnlineScreens/HomeScreen';
 import CalendarScreen from './src/screens/OnlineScreens/CalendarScreen';
+ 
 import CartScreen from './src/screens/OnlineScreens/CartScreen';
 import Register from './src/screens/OfflineScreens/Register';
 import { View, ActivityIndicator } from 'react-native';
@@ -13,6 +14,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import ProfileScreen from './src/screens/OnlineScreens/ProfileScreen';
 import { Provider } from 'react-redux';
 import store from './src/redux/store';
+import MealPlannerScreen from './src/screens/OnlineScreens/MealPlannerScreen';
 
 function MainTabs({ setIsSignedIn } ) {
   const TabNav = createBottomTabNavigator();
@@ -34,6 +36,7 @@ function MainTabs({ setIsSignedIn } ) {
         name="Home"
         component={HomeScreen}
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Icon
               name="home"
@@ -44,10 +47,12 @@ function MainTabs({ setIsSignedIn } ) {
           tabBarItemStyle: { flex: 1 },
         }}
       />
+    
       <TabNav.Screen
         name="Calendar"
         component={CalendarScreen}
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Icon
               name="calendar"
@@ -62,6 +67,7 @@ function MainTabs({ setIsSignedIn } ) {
         name="Cart"
         component={CartScreen}
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Icon
               name="cart"
@@ -75,9 +81,11 @@ function MainTabs({ setIsSignedIn } ) {
       <TabNav.Screen
         name="Profil"
         children={() => <ProfileScreen setIsSignedIn={setIsSignedIn} />}
+       
         
       
         options={{
+          headerShown: false,
           tabBarIcon: ({ focused }) => (
             <Icon
               name="person"
@@ -136,12 +144,19 @@ function App() {
             borderLeftColor: '#639067',
             borderRightColor: '#639067',
           }}>
-          <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
-              {isSignedIn ? (
-                <Stack.Screen name="MainTabs" >
-                  {(props) => <MainTabs {...props}  setIsSignedIn={setIsSignedIn} />}
+           <NavigationContainer>
+          <Stack.Navigator screenOptions={{ headerShown: false }}>
+            {isSignedIn ? (
+              <>
+                <Stack.Screen name="MainTabs">
+                  {(props) => <MainTabs {...props} setIsSignedIn={setIsSignedIn} />}
                 </Stack.Screen>
+                <Stack.Screen 
+                  name="MealPlannerScreen"
+                  component={MealPlannerScreen}
+                  options={{ headerShown: true, title: 'Ajouter un repas' }}
+                />
+              </>
               ) : (
                 <>   
                   <Stack.Screen name="Login">
