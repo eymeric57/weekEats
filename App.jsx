@@ -15,6 +15,7 @@ import ProfileScreen from './src/screens/OnlineScreens/ProfileScreen';
 import { Provider } from 'react-redux';
 import store from './src/redux/store';
 import MealPlannerScreen from './src/screens/OnlineScreens/MealPlannerScreen';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 function MainTabs({ setIsSignedIn } ) {
   const TabNav = createBottomTabNavigator();
@@ -63,6 +64,7 @@ function MainTabs({ setIsSignedIn } ) {
           tabBarItemStyle: { flex: 1 },
         }}
       />
+      
       <TabNav.Screen
         name="Cart"
         component={CartScreen}
@@ -81,9 +83,6 @@ function MainTabs({ setIsSignedIn } ) {
       <TabNav.Screen
         name="Profil"
         children={() => <ProfileScreen setIsSignedIn={setIsSignedIn} />}
-       
-        
-      
         options={{
           headerShown: false,
           tabBarIcon: ({ focused }) => (
@@ -111,11 +110,10 @@ function App() {
         const authentification = await AsyncStorage.getItem('user');
         if (authentification) {
           setIsSignedIn(true);
-       
         }
       } catch (error) {
         console.error('Erreur lors de la vérification de l\'authentification:', error);
-      }finally{
+      } finally {
         setIsLoading(false);
       }
     };
@@ -133,46 +131,52 @@ function App() {
 
   return (
     <Provider store={store}>
-      <View style={{ flex: 1, backgroundColor: 'black' }}>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: 'white',
-            overflow: 'hidden',
-            borderLeftWidth: 9,
-            borderRightWidth: 9,
-            borderLeftColor: '#639067',
-            borderRightColor: '#639067',
-          }}>
-           <NavigationContainer>
-          <Stack.Navigator screenOptions={{ headerShown: false }}>
-            {isSignedIn ? (
-              <>
-                <Stack.Screen name="MainTabs">
-                  {(props) => <MainTabs {...props} setIsSignedIn={setIsSignedIn} />}
-                </Stack.Screen>
-                <Stack.Screen 
-                  name="MealPlannerScreen"
-                  component={MealPlannerScreen}
-                  options={{ headerShown: true, title: 'Ajouter un repas' }}
-                />
-              </>
-              ) : (
-                <>   
-                  <Stack.Screen name="Login">
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={{ flex: 1, backgroundColor: 'black' }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: 'white',
+              overflow: 'hidden',
+              borderLeftWidth: 9,
+              borderRightWidth: 9,
+              borderLeftColor: '#639067',
+              borderRightColor: '#639067',
+            }}>
+            <NavigationContainer>
+              <Stack.Navigator screenOptions={{ headerShown: false }}>
+                {isSignedIn ? (
+                  <>
+                    <Stack.Screen name="MainTabs">
+                      {(props) => <MainTabs {...props} setIsSignedIn={setIsSignedIn} />}
+                    </Stack.Screen>
+                    <Stack.Screen 
+                      name="MealPlannerScreen"
+                      component={MealPlannerScreen}
+                      options={{ headerShown: true, title: 'Ajouter un repas' }}
+                    />
+                  </>
+                ) : (
+                  <>   
+                    <Stack.Screen name="Calendar">
+                      {(props) => <CalendarScreen {...props} setIsSignedIn={setIsSignedIn} />}
+                    </Stack.Screen> 
+                       {/* <Stack.Screen name="Login">
                     {(props) => <Login {...props} setIsSignedIn={setIsSignedIn} />}
                   </Stack.Screen> 
                   <Stack.Screen name="Register">
                     {(props) => <Register {...props} setIsSignedIn={setIsSignedIn} />}
-                  </Stack.Screen>
-                </>
-              )}
-            </Stack.Navigator>
-          </NavigationContainer>
+                  </Stack.Screen>  */}
+                  </>
+                )}
+              </Stack.Navigator>
+            </NavigationContainer>
+          </View>
         </View>
-      </View>
+      </GestureHandlerRootView>
     </Provider>
   );
 }
+  
 
 export default App;
