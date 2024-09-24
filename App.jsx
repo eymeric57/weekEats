@@ -16,11 +16,14 @@ import { Provider } from 'react-redux';
 import store from './src/redux/store';
 import MealPlannerScreen from './src/screens/OnlineScreens/MealPlannerScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { AuthContextProvider, useAuthContext } from './src/contexts/AuthContext';
 
 function MainTabs({ setIsSignedIn } ) {
   const TabNav = createBottomTabNavigator();
+  const AuthContext = React.useContext(useAuthContext);
 
   return (
+    
     <TabNav.Navigator
       screenOptions={{
         tabBarStyle: {
@@ -96,6 +99,7 @@ function MainTabs({ setIsSignedIn } ) {
         }}
       />
     </TabNav.Navigator>
+   
   );
 }
 
@@ -130,6 +134,8 @@ function App() {
   }
 
   return (
+    <AuthContextProvider
+    >
     <Provider store={store}>
       <GestureHandlerRootView style={{ flex: 1 }}>
         <View style={{ flex: 1, backgroundColor: 'black' }}>
@@ -158,15 +164,15 @@ function App() {
                   </>
                 ) : (
                   <>   
-                    <Stack.Screen name="Calendar">
+                    {/* <Stack.Screen name="Calendar">
                       {(props) => <CalendarScreen {...props} setIsSignedIn={setIsSignedIn} />}
-                    </Stack.Screen> 
-                       {/* <Stack.Screen name="Login">
+                    </Stack.Screen>  */}
+                       <Stack.Screen name="Login">
                     {(props) => <Login {...props} setIsSignedIn={setIsSignedIn} />}
                   </Stack.Screen> 
                   <Stack.Screen name="Register">
                     {(props) => <Register {...props} setIsSignedIn={setIsSignedIn} />}
-                  </Stack.Screen>  */}
+                  </Stack.Screen> 
                   </>
                 )}
               </Stack.Navigator>
@@ -175,6 +181,7 @@ function App() {
         </View>
       </GestureHandlerRootView>
     </Provider>
+    </AuthContextProvider>
   );
 }
   

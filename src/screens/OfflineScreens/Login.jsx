@@ -9,52 +9,63 @@ import {
   Image,
 } from 'react-native';
 import {useDispatch} from 'react-redux';
-import {setUserDetail} from '../../redux/user/UserSlice';
+import UserSlice, {setUserDetail} from '../../redux/user/UserSlice';
 import api from '../../axiosConfig';
+import {useAuthContext} from '../../contexts/AuthContext';
 
 const Login = ({navigation, setIsSignedIn}) => {
-  const dispatch = useDispatch();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const {signIn} = useAuthContext();
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     setIsLoading(true);
+
     try {
-      const response = await api.post('/login', {email, password});
-      console.log('Réponse du serveur:', response.data);
+      api
+        .post('/login', {email, password}) // Ajout de la parenthèse ici
+        .then(response => {
+          console.log('Réponse du serveur:', response.data);
 
-      if (response.data.id) {
-        dispatch(
-          setUserDetail({
-            id: response.data.id,
-            email: response.data.email,
-            name: response.data.name,
-            surname: response.data.surname,
-            meals: response.data.meals,
-          }),
-        );
+          if (response.data) {
+            console.log('====================================');
+            console.log('yoyo');
+            console.log('====================================');
 
-        setIsSignedIn(true);
-      } else {
-        console.log(`Erreur: Pas d'ID dans la réponse du serveur`);
-      }
+            const user = {
+              id: response.data.id,
+              email: response.data.email,
+              name: response.data.name,
+              surname: response.data.surname,
+              meals: response.data.meals,
+            };
+
+            try {
+              signIn(user);
+              setIsSignedIn(true);
+            } catch (error) {
+              console.error(
+                "Erreur lors de la connexion de l'utilisateur:",
+                error.message,
+              );
+              if (error.response) {
+                console.error('Response data:', error.response.data);
+                console.error('Response status:', error.response.status);
+                console.error('Response headers:', error.response.headers);
+              } else if (error.request) {
+                console.error('Request data:', error.request);
+              } else {
+                console.error('Error message:', error.message);
+              }
+            } finally {
+              setIsLoading(false);
+            }
+          }
+        });
     } catch (error) {
-      console.error(
-        "Erreur lors de la connexion de l'utilisateur:",
-        error.message,
-      );
-      if (error.response) {
-        console.error('Response data:', error.response.data);
-        console.error('Response status:', error.response.status);
-        console.error('Response headers:', error.response.headers);
-      } else if (error.request) {
-        console.error('Request data:', error.request);
-      } else {
-        console.error('Error message:', error.message);
-      }
-    } finally {
+      setError(error.message); // Ajout pour gérer les erreurs de la requête
       setIsLoading(false);
     }
   };

@@ -14,11 +14,11 @@ import {CommonActions, useNavigation} from '@react-navigation/native';
 import axios from 'axios';
 import {API_ROOT} from '../../constants/apiConstants';
 import {useAuthContext} from '../../contexts/AuthContext';
-import { USER_INFOS } from '../../constants/appConstants';
-import { useDispatch } from 'react-redux';
-import { setUserDetail } from '../../redux/user/UserSlice';
+import {USER_INFOS} from '../../constants/appConstants';
+import {useDispatch} from 'react-redux';
+import {setUserDetail} from '../../redux/user/UserSlice';
 
-const Register = ({ setIsSignedIn }) => {
+const Register = ({setIsSignedIn}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,35 +74,30 @@ const Register = ({ setIsSignedIn }) => {
         surname,
         email,
         password,
-      });  
- 
+      });
+
       console.log('Utilisateur enregistré avec succès:', registerResponse.data);
 
-      // Supposons que la réponse contient les informations de l'utilisateur
       const userData = registerResponse.data;
 
       const user = {
-        userId: userData.id, // Assurez-vous que ces champs correspondent à votre réponse API
+        id: userData.id,
         email: userData.email,
         name: userData.name,
+        surname: userData.surname,
+        meals: userData.meals,
       };
+      signIn(user);
 
-      
-      dispatch(setUserDetail(user));
-       await signIn(user);
-       setIsSignedIn(true);
-        console.log('Connexion reussie');
-    
-      // Utiliser signIn du contexte pour connecter l'utilisateur
-    
-    }catch (error) {
+
+      setIsSignedIn(true);
+      console.log('Connexion reussie');
+    } catch (error) {
       console.log('Erreur:', error.response?.data || error.message);
       if (error.response?.data?.message) {
         setError(error.response.data.message);
       } else {
-        setError(
-          "Erreur lors de l'enregistrement, veuillez réessayer.",
-        );
+        setError("Erreur lors de l'enregistrement, veuillez réessayer.");
       }
     } finally {
       setIsLoading(false);

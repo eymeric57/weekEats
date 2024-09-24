@@ -1,6 +1,8 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import { API_URL } from "../../constants/apiConstant";
+import { API_URL } from "../../constants/apiConstants";
+
+
 
 const userSlice = createSlice({
   name: "users",
@@ -15,10 +17,9 @@ const userSlice = createSlice({
     },
     setUserDetail: (state, action) => {
       state.userDetail = action.payload;
-    },
-    setToken: (state, action) => { // Ajoutez ce reducer
-      state.token = action.payload;
+      // useAuthContext().signIn(action.payload);
     }
+
   }
 });
 
@@ -32,6 +33,8 @@ export const fetchUserDetail = (id) => async (dispatch) => {
     });
     dispatch(setUserDetail(response.data));
     dispatch(setLoading(false));
+   
+    
   } catch (error) {
     console.log(`Erreur lors de la récupération des détails de l'user: ${error}`);
     dispatch(setLoading(false));
