@@ -27,6 +27,7 @@ export const { setLoading, setUserDetail} = userSlice.actions;
 
 //on crée une méthode qui permet de récuperer les information d'un user dans la bdd
 export const fetchUserDetail = (id) => async (dispatch) => {
+  
   try {
     dispatch(setLoading(true));
     const response = await axios.get(`${API_URL}/users/${id}`, {

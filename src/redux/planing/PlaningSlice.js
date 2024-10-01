@@ -31,10 +31,6 @@ export const fetchPlanningDetail = userId => async dispatch => {
     dispatch(setPlanningDetail(response.data));
     dispatch(setLoading(false));
 
-
-
-
-
   } catch (error) {
     console.log(
       `Erreur lors de la récupération des détails du planning: ${error}`,

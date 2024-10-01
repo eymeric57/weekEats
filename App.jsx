@@ -167,6 +167,10 @@ function App() {
                     {/* <Stack.Screen name="Calendar">
                       {(props) => <CalendarScreen {...props} setIsSignedIn={setIsSignedIn} />}
                     </Stack.Screen>  */}
+                     {/* <Stack.Screen name="Home">
+                    {(props) => <HomeScreen {...props} setIsSignedIn={setIsSignedIn} />}
+                  </Stack.Screen>  */}
+
                        <Stack.Screen name="Login">
                     {(props) => <Login {...props} setIsSignedIn={setIsSignedIn} />}
                   </Stack.Screen> 

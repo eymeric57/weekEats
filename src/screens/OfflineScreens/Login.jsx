@@ -22,53 +22,67 @@ const Login = ({navigation, setIsSignedIn}) => {
 
   const handleSubmit = () => {
     setIsLoading(true);
+    setError(null);
 
-    try {
-      api
-        .post('/login', {email, password}) // Ajout de la parenthèse ici
-        .then(response => {
-          console.log('Réponse du serveur:', response.data);
-
-          if (response.data) {
-            console.log('====================================');
-            console.log('yoyo');
-            console.log('====================================');
-
-            const user = {
-              id: response.data.id,
-              email: response.data.email,
-              name: response.data.name,
-              surname: response.data.surname,
-              meals: response.data.meals,
-            };
-
-            try {
-              signIn(user);
-              setIsSignedIn(true);
-            } catch (error) {
-              console.error(
-                "Erreur lors de la connexion de l'utilisateur:",
-                error.message,
-              );
-              if (error.response) {
-                console.error('Response data:', error.response.data);
-                console.error('Response status:', error.response.status);
-                console.error('Response headers:', error.response.headers);
-              } else if (error.request) {
-                console.error('Request data:', error.request);
-              } else {
-                console.error('Error message:', error.message);
-              }
-            } finally {
-              setIsLoading(false);
-            }
-          }
-        });
-    } catch (error) {
-      setError(error.message); // Ajout pour gérer les erreurs de la requête
+    const timeoutId = setTimeout(() => {
       setIsLoading(false);
-    }
+      setError('La connexion a pris trop de temps. Veuillez réessayer.');
+    }, 10000);
+
+    api
+      .post('/login', {email, password})
+      .then(response => {
+        clearTimeout(timeoutId);
+        console.log('Réponse du serveur:', response.data);
+
+        if (response.data) {
+          console.log('====================================');
+          console.log('yoyo');
+          console.log('====================================');
+
+          const user = {
+            id: response.data.id,
+            email: response.data.email,
+            name: response.data.name,
+            surname: response.data.surname,
+            meals: response.data.meals,
+          };
+
+          try {
+            signIn(user);
+            setIsSignedIn(true);
+          } catch (error) {
+            console.error(
+              "Erreur lors de la connexion de l'utilisateur:",
+              error.message,
+            );
+            setError("Une erreur est survenue lors de la connexion. Veuillez réessayer.");
+          }
+        }
+      })
+      .catch(error => {
+        clearTimeout(timeoutId);
+        console.error('Erreur:', error.message);
+        if (error.response) {
+          console.error('Response data:', error.response.data);
+          console.error('Response status:', error.response.status);
+          console.error('Response headers:', error.response.headers);
+          setError("Une erreur est survenue. Veuillez vérifier vos informations et réessayer.");
+        } else if (error.request) {
+          console.error('Request data:', error.request);
+          setError("Impossible de contacter le serveur. Veuillez vérifier votre connexion internet.");
+        } else {
+          console.error('Error message:', error.message);
+          setError(error.message);
+        }
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      });
   };
+
+  // Le reste du code reste inchangé...
 
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">

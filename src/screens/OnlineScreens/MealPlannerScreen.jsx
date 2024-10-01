@@ -1,6 +1,6 @@
 import {useRoute} from '@react-navigation/native';
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, TextInput, Alert} from 'react-native';
+import {View, Text, TouchableOpacity, TextInput, Alert, ActivityIndicator} from 'react-native';
 import {API_ROOT, API_URL} from '../../constants/apiConstants';
 import {useAuthContext} from '../../contexts/AuthContext';
 
@@ -20,6 +20,7 @@ const MealPlannerScreen = () => {
   const [selectedTime, setSelectedTime] = useState(TIME_PERIODS[0]);
   const [selectedMeal, setSelectedMeal] = useState(MEAL_TYPES[0]);
   const [mealName, setMealName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const route = useRoute();
 
   const {user} = useAuthContext();
@@ -61,6 +62,7 @@ const MealPlannerScreen = () => {
   );
 
   const handleSubmit = async () => {
+    setIsLoading(true);
     if (!mealName) {
       Alert.alert('Erreur', 'Veuillez entrer le nom du plat.');
       return;
@@ -131,6 +133,7 @@ const MealPlannerScreen = () => {
           body: JSON.stringify({
             planings: [planingId],
           }),
+          
         });
 
         if (!updateMealResponse.ok) {
@@ -142,6 +145,7 @@ const MealPlannerScreen = () => {
         console.error('Erreur:', error.message);
       }
       Alert.alert('Succès', 'Le repas a été ajouté avec succès');
+      setIsLoading(false);
 
       // Réinitialiser les champs après l'enregistrement
       setMealName('');
@@ -157,6 +161,7 @@ const MealPlannerScreen = () => {
   };
 
   return (
+  
     <View className="flex-1 bg-white items-center p-4">
       <View className="w-full">
         <Text className="text-[#639067] text-[21px] font-bold text-center mb-8">
@@ -197,12 +202,15 @@ const MealPlannerScreen = () => {
             onChangeText={setMealName}
           />
         </View>
-
+       { isLoading ? (
+      <ActivityIndicator size="small" color="#639067" />
+    ) : (
         <TouchableOpacity
           onPress={handleSubmit}
           className="w-[86px] h-[86px] bg-[#639067] rounded-full justify-center items-center self-center mb-6">
           <Text className="text-[#efefef] text-xl">Ajouter</Text>
         </TouchableOpacity>
+)}
       </View>
     </View>
   );
