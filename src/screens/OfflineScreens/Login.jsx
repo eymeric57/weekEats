@@ -36,9 +36,6 @@ const Login = ({navigation, setIsSignedIn}) => {
         console.log('Réponse du serveur:', response.data);
 
         if (response.data) {
-          console.log('====================================');
-          console.log('yoyo');
-          console.log('====================================');
 
           const user = {
             id: response.data.id,
@@ -82,7 +79,7 @@ const Login = ({navigation, setIsSignedIn}) => {
       });
   };
 
-  // Le reste du code reste inchangé...
+
 
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">

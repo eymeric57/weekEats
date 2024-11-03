@@ -1,7 +1,7 @@
 import React from "react";
 import { Text, View, StyleSheet } from "react-native";
 import Icon from "react-native-ionicons";
-import Loader from "../../components/loader/Loader";
+
 
 
 function CartScreen() {

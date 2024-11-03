@@ -5,6 +5,7 @@ import { selectUserData } from '../../redux/user/UserSelector';
 import { useAuthContext } from '../../contexts/AuthContext';
 
 function ProfileScreen({ setIsSignedIn }) {
+  
   const { userDetail } = useSelector(selectUserData);
 
   const nickname = userDetail?.name ?? 'Pas de pseudo';

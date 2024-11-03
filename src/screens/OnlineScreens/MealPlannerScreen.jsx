@@ -1,6 +1,15 @@
 import {useRoute} from '@react-navigation/native';
 import React, {useState} from 'react';
-import {View, Text, TouchableOpacity, TextInput, Alert, ActivityIndicator} from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  Alert,
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+} from 'react-native';
 import {API_ROOT, API_URL} from '../../constants/apiConstants';
 import {useAuthContext} from '../../contexts/AuthContext';
 
@@ -22,11 +31,11 @@ const MealPlannerScreen = () => {
   const [mealName, setMealName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const route = useRoute();
-
+  const {item} = route.params;
   const {user} = useAuthContext();
   const userId = user.id;
-
-  const date = route.params?.date || new Date();
+  console.log('User ID:', item);
+  const date = route.params?.date || route.params?.item?.date || new Date();
 
   // Convertir la date ISO en objet Date
   const selectedDate = new Date(date);
@@ -96,7 +105,6 @@ const MealPlannerScreen = () => {
       const mealResult = await mealResponse.json();
       const mealId = mealResult['@id'];
       console.log(mealId);
-      
 
       // 2. Ajouter le planning
       const planingData = {
@@ -133,7 +141,6 @@ const MealPlannerScreen = () => {
           body: JSON.stringify({
             planings: [planingId],
           }),
-          
         });
 
         if (!updateMealResponse.ok) {
@@ -142,7 +149,7 @@ const MealPlannerScreen = () => {
           );
         }
       } catch (error) {
-        console.error('Erreur:', error.message);
+        console.error('Erreur:la', error.message);
       }
       Alert.alert('Succès', 'Le repas a été ajouté avec succès');
       setIsLoading(false);
@@ -152,7 +159,7 @@ const MealPlannerScreen = () => {
       setSelectedTime(TIME_PERIODS[0]);
       setSelectedMeal(MEAL_TYPES[0]);
     } catch (error) {
-      console.error('Erreur:', error);
+      console.error('Erreur: ici', error);
       Alert.alert(
         'Erreur',
         error.message || "Une erreur s'est produite lors de l'ajout du repas",
@@ -160,8 +167,12 @@ const MealPlannerScreen = () => {
     }
   };
 
+  const noMealPlanned =
+    !item.mealsByTimeOfDay.matin.length &&
+    !item.mealsByTimeOfDay.midi.length &&
+    !item.mealsByTimeOfDay.soir.length;
+
   return (
-  
     <View className="flex-1 bg-white items-center p-4">
       <View className="w-full">
         <Text className="text-[#639067] text-[21px] font-bold text-center mb-8">
@@ -202,18 +213,72 @@ const MealPlannerScreen = () => {
             onChangeText={setMealName}
           />
         </View>
-       { isLoading ? (
-      <ActivityIndicator size="small" color="#639067" />
-    ) : (
-        <TouchableOpacity
-          onPress={handleSubmit}
-          className="w-[86px] h-[86px] bg-[#639067] rounded-full justify-center items-center self-center mb-6">
-          <Text className="text-[#efefef] text-xl">Ajouter</Text>
-        </TouchableOpacity>
-)}
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#639067" />
+        ) : (
+          <TouchableOpacity
+            onPress={handleSubmit}
+            className="w-[86px] h-[86px] bg-[#639067] rounded-full justify-center items-center self-center mb-6">
+            <Text className="text-[#efefef] text-xl">Ajouter</Text>
+          </TouchableOpacity>
+        )}
+
+        <View className="w-full">
+          <Pressable
+            onPress={() => navigation.navigate('MealPlannerScreen', {item})}>
+            {noMealPlanned ? (
+              <View>
+                <Text></Text>
+                <View />
+                <Text>Pas de repas prévu</Text>
+                <View />
+                <Text></Text>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.container}>
+                  <View style={styles.mealSection}>
+                    <Text style={styles.mealTitle}>Matin</Text>
+                    <Text>{item.mealsByTimeOfDay.matin.join(', ')}</Text>
+                  </View>
+
+                  <View style={styles.mealSection}>
+                    <Text style={styles.mealTitle}>Midi</Text>
+                    <Text>{item.mealsByTimeOfDay.midi.join(', ')}</Text>
+                  </View>
+
+                  <View style={styles.mealSection}>
+                    <Text style={styles.mealTitle}>Soir</Text>
+                    <Text>{item.mealsByTimeOfDay.soir.join(', ')}</Text>
+                  </View>
+                </View>
+              </View>
+            )}
+          </Pressable>
+        </View>
       </View>
     </View>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    padding: 20,
+    backgroundColor: '#EFEFEF',
+    borderRadius: 10,
+  },
+  mealSection: {
+    marginBottom: 20,
+    padding: 10,
+    backgroundColor: 'white',
+    borderRadius: 10,
+  },
+  mealTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#639067',
+  },
+});
 
 export default MealPlannerScreen;

@@ -17,13 +17,14 @@ import store from './src/redux/store';
 import MealPlannerScreen from './src/screens/OnlineScreens/MealPlannerScreen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { AuthContextProvider, useAuthContext } from './src/contexts/AuthContext';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 function MainTabs({ setIsSignedIn } ) {
   const TabNav = createBottomTabNavigator();
   const AuthContext = React.useContext(useAuthContext);
 
   return (
-    
+   
     <TabNav.Navigator
       screenOptions={{
         tabBarStyle: {
@@ -99,6 +100,7 @@ function MainTabs({ setIsSignedIn } ) {
         }}
       />
     </TabNav.Navigator>
+   
    
   );
 }

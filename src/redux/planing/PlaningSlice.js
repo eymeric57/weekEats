@@ -30,7 +30,6 @@ export const fetchPlanningDetail = userId => async dispatch => {
     console.log('response', response.data['hydra:member'].types);
     dispatch(setPlanningDetail(response.data));
     dispatch(setLoading(false));
-
   } catch (error) {
     console.log(
       `Erreur lors de la récupération des détails du planning: ${error}`,
