@@ -1,181 +1,154 @@
-import {useRoute} from '@react-navigation/native';
 import React, {useState} from 'react';
+import {useRoute} from '@react-navigation/native';
+import {useDispatch, useSelector} from 'react-redux';
+import axios from 'axios';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
   Alert,
   ActivityIndicator,
-  Pressable,
-  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import {API_ROOT, API_URL} from '../../constants/apiConstants';
 import {useAuthContext} from '../../contexts/AuthContext';
+import {fetchUserDetail} from '../../redux/user/UserSlice';
+import {selectUserData} from '../../redux/user/UserSelector';
+import MealsByDay from '../../components/MealsByDay';
 
 const TIME_PERIODS = [
-  {id: 1, title: 'Matin'},
-  {id: 2, title: 'Midi'},
-  {id: 3, title: 'Soir'},
-];
-
-const MEAL_TYPES = [
-  {id: 1, title: 'Entrée'},
-  {id: 2, title: 'Plat'},
-  {id: 3, title: 'Dessert'},
+  {id: '1', title: 'Matin'},
+  {id: '2', title: 'Midi'},
+  {id: '3', title: 'Soir'},
 ];
 
 const MealPlannerScreen = () => {
   const [selectedTime, setSelectedTime] = useState(TIME_PERIODS[0]);
-  const [selectedMeal, setSelectedMeal] = useState(MEAL_TYPES[0]);
   const [mealName, setMealName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const route = useRoute();
-  const {item} = route.params;
   const {user} = useAuthContext();
   const userId = user.id;
-  console.log('User ID:', item);
-  const date = route.params?.date || route.params?.item?.date || new Date();
+  const dispatch = useDispatch();
 
-  // Convertir la date ISO en objet Date
+  const date = route.params?.date || route.params?.item?.date || new Date();
   const selectedDate = new Date(date);
 
-  // Obtenir le nom du jour
   const dayName = selectedDate.toLocaleDateString('fr-FR', {weekday: 'long'});
+  const {userDetail} = useSelector(selectUserData);
 
-  const TimeButton = ({id, title}) => (
-    <TouchableOpacity
-      className={`w-[90px] h-[22px] ${
-        selectedTime.id === id ? 'bg-[#1d9913]' : 'bg-[#efefef]'
-      } rounded-[25px] justify-center items-center mr-4`}
-      onPress={() => setSelectedTime({id, title})}>
-      <Text className="text-black text-[15px]">{title}</Text>
-    </TouchableOpacity>
-  );
-
-  const MealButton = ({id, title}) => (
-    <TouchableOpacity
-      className={`w-[59px] h-3 ${
-        selectedMeal.id === id ? 'bg-[#1d9913]' : 'bg-[#d9d9d9]'
-      } rounded-[11px] justify-center items-center ${
-        title !== 'Dessert' ? 'mr-[41px]' : ''
-      }`}
-      onPress={() => setSelectedMeal({id, title})}>
-      <Text
-        className={`text-[10px] ${
-          selectedMeal.id === id ? 'text-white' : 'text-black'
-        }`}>
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
+  const fetchMealById = async mealId => {
+    try {
+      const response = await fetch(`${API_ROOT}${mealId}`);
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Erreur lors de la recherche du plat:', error);
+    }
+  };
 
   const handleSubmit = async () => {
     setIsLoading(true);
     if (!mealName) {
       Alert.alert('Erreur', 'Veuillez entrer le nom du plat.');
+      setIsLoading(false);
       return;
     }
 
     try {
-      // 1. Ajouter le repas
-      const mealData = {
-        label: mealName,
-        isActive: true,
-        utilisateur: `${API_URL}/users/${userId}`,
-        planings: [],
-      };
-
-      const mealResponse = await fetch(`${API_URL}/meals`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/ld+json',
-        },
-        body: JSON.stringify(mealData),
+      const formattedDate = new Date(selectedDate).toLocaleDateString('fr-CA', {
+        timeZone: 'Europe/Paris',
       });
 
-      if (!mealResponse.ok) {
-        const errorText = await mealResponse.text();
-        console.error("Erreur de l'API lors de l'ajout du repas:", errorText);
-        throw new Error(
-          `Erreur lors de l'ajout du repas: ${mealResponse.status} ${mealResponse.statusText}`,
+      let planningFound = null;
+      let existingMeal = null;
+
+      // 1. Chercher le planning et le repas existant pour cette date et ce type
+      if (userDetail && userDetail.plannings) {
+        // Trouver le planning pour la date
+        planningFound = userDetail.plannings.find(
+          planning => planning.date.slice(0, 10) === formattedDate,
         );
+
+        if (planningFound) {
+          // Chercher un repas existant du même type
+          for (const mealId of planningFound.meals) {
+            const mealData = await fetchMealById(mealId);
+            if (
+              mealData.type.labeltype.toLowerCase() ===
+              selectedTime.title.toLowerCase()
+            ) {
+              existingMeal = mealData;
+              break;
+            }
+          }
+        }
       }
 
-      const mealResult = await mealResponse.json();
-      const mealId = mealResult['@id'];
-      console.log(mealId);
-
-      // 2. Ajouter le planning
-      const planingData = {
-        date: selectedDate.toISOString(),
-        note: '',
-        utilisateur: `${API_URL}/users/${userId}`,
-        types: [`${API_URL}/types/${selectedTime.id}`],
-        meals: [mealId],
-      };
-
-      try {
-        const planingResponse = await fetch(`${API_URL}/planings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/ld+json',
-          },
-          body: JSON.stringify(planingData),
+      // 2. Traiter selon les cas
+      if (!planningFound) {
+        // Cas 3: Pas de planning → Créer planning + repas
+        console.log('Création nouveau planning et repas');
+        const newPlanning = await axios.post(`${API_URL}/plannings`, {
+          date: formattedDate,
+          user: `/api/users/${userId}`,
         });
 
-        if (!planingResponse.ok) {
-          throw new Error(
-            `Erreur lors de la création du planning: ${planingResponse.statusText}`,
-          );
-        }
-
-        const planingResult = await planingResponse.json();
-        const planingId = planingResult['@id'];
-
-        const updateMealResponse = await fetch(`${API_ROOT}${mealId}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/merge-patch+json',
-          },
-          body: JSON.stringify({
-            planings: [planingId],
-          }),
+        await axios.post(`${API_URL}/meals`, {
+          label: mealName,
+          type: `/api/types/${selectedTime.id}`,
+          planning: `/api/plannings/${newPlanning.data.id}`,
         });
-
-        if (!updateMealResponse.ok) {
-          throw new Error(
-            `Erreur lors de la mise à jour du repas: ${updateMealResponse.statusText}`,
-          );
-        }
-      } catch (error) {
-        console.error('Erreur:la', error.message);
+        Alert.alert('Succès', 'Nouveau planning et repas ajoutés');
+      } else if (existingMeal) {
+        // Cas 1: Planning existe + même type → Ajouter au repas existant
+        console.log('Ajout au repas existant');
+        await axios.put(`${API_URL}/meals/${existingMeal.id}`, {
+          label: `${existingMeal.label}, ${mealName}`,
+          type: `/api/types/${selectedTime.id}`,
+          planning: `/api/plannings/${planningFound.id}`,
+        });
+        Alert.alert('Succès', 'Repas ajouté au menu existant');
+      } else {
+        // Cas 2: Planning existe + type différent → Créer nouveau repas
+        console.log('Création nouveau repas dans planning existant');
+        await axios.post(`${API_URL}/meals`, {
+          label: mealName,
+          type: `/api/types/${selectedTime.id}`,
+          planning: `/api/plannings/${planningFound.id}`,
+        });
+        Alert.alert('Succès', 'Nouveau repas ajouté au planning');
       }
-      Alert.alert('Succès', 'Le repas a été ajouté avec succès');
-      setIsLoading(false);
 
-      // Réinitialiser les champs après l'enregistrement
+      // Rafraîchir les données et réinitialiser le formulaire
+      dispatch(fetchUserDetail(userId));
       setMealName('');
       setSelectedTime(TIME_PERIODS[0]);
-      setSelectedMeal(MEAL_TYPES[0]);
     } catch (error) {
-      console.error('Erreur: ici', error);
-      Alert.alert(
-        'Erreur',
-        error.message || "Une erreur s'est produite lors de l'ajout du repas",
-      );
+      console.error('Error:', error.response?.data);
+      Alert.alert('Erreur', "Erreur lors de l'ajout du repas");
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const noMealPlanned =
-    !item.mealsByTimeOfDay.matin.length &&
-    !item.mealsByTimeOfDay.midi.length &&
-    !item.mealsByTimeOfDay.soir.length;
-
   return (
-    <View className="flex-1 bg-white items-center p-4">
-      <View className="w-full">
-        <Text className="text-[#639067] text-[21px] font-bold text-center mb-8">
+    <View
+      style={{
+        flex: 1,
+        backgroundColor: 'white',
+        alignItems: 'center',
+        padding: 16,
+      }}>
+      <View style={{width: '100%'}}>
+        <Text
+          style={{
+            color: '#639067',
+            fontSize: 21,
+            fontWeight: 'bold',
+            textAlign: 'center',
+            marginBottom: 32,
+          }}>
           {dayName +
             ' ' +
             selectedDate.toLocaleDateString('fr-FR', {
@@ -184,101 +157,96 @@ const MealPlannerScreen = () => {
             })}
         </Text>
 
-        <View className="flex-row justify-center mb-6">
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'center',
+            marginBottom: 24,
+          }}>
           {TIME_PERIODS.map(period => (
-            <TimeButton key={period.id} id={period.id} title={period.title} />
+            <TimeButton
+              key={period.id}
+              id={period.id}
+              title={period.title}
+              selectedTime={selectedTime}
+              setSelectedTime={setSelectedTime}
+            />
           ))}
         </View>
 
-        <Text className="text-center text-[#d9d9d9] text-[10px] mb-4">
+        <Text
+          style={{
+            color: '#d9d9d9',
+            fontSize: 10,
+            textAlign: 'center',
+            marginBottom: 16,
+          }}>
           Sélectionner le moment de la journée
         </Text>
 
-        <View className="flex-row justify-center mb-6">
-          {MEAL_TYPES.map(type => (
-            <MealButton key={type.id} id={type.id} title={type.title} />
-          ))}
-        </View>
-
-        <Text className="text-center text-[#d9d9d9] text-[10px] mb-4">
-          Sélectionner le type de plat
-        </Text>
-
-        <View className="w-full h-[49px] bg-[#efefef] rounded-[15px] justify-center items-center mb-6">
+        <View
+          style={{
+            width: '100%',
+            height: 49,
+            backgroundColor: '#efefef',
+            borderRadius: 15,
+            justifyContent: 'center',
+            alignItems: 'center',
+            marginBottom: 24,
+          }}>
           <TextInput
             placeholder="Entrez votre plat ici !"
             placeholderTextColor="#a7a5a5"
-            className="text-[15px] text-center w-full"
+            style={{
+              color: 'black',
+              fontSize: 15,
+              textAlign: 'center',
+              width: '100%',
+            }}
             value={mealName}
             onChangeText={setMealName}
           />
         </View>
+
         {isLoading ? (
           <ActivityIndicator size="small" color="#639067" />
         ) : (
           <TouchableOpacity
             onPress={handleSubmit}
-            className="w-[86px] h-[86px] bg-[#639067] rounded-full justify-center items-center self-center mb-6">
-            <Text className="text-[#efefef] text-xl">Ajouter</Text>
+            style={{
+              width: 86,
+              height: 86,
+              backgroundColor: '#639067',
+              borderRadius: 43,
+              justifyContent: 'center',
+              alignItems: 'center',
+              alignSelf: 'center',
+              marginBottom: 24,
+            }}>
+            <Text style={{color: '#efefef', fontSize: 18}}>Ajouter</Text>
           </TouchableOpacity>
         )}
-
-        <View className="w-full">
-          <Pressable
-            onPress={() => navigation.navigate('MealPlannerScreen', {item})}>
-            {noMealPlanned ? (
-              <View>
-                <Text></Text>
-                <View />
-                <Text>Pas de repas prévu</Text>
-                <View />
-                <Text></Text>
-              </View>
-            ) : (
-              <View>
-                <View style={styles.container}>
-                  <View style={styles.mealSection}>
-                    <Text style={styles.mealTitle}>Matin</Text>
-                    <Text>{item.mealsByTimeOfDay.matin.join(', ')}</Text>
-                  </View>
-
-                  <View style={styles.mealSection}>
-                    <Text style={styles.mealTitle}>Midi</Text>
-                    <Text>{item.mealsByTimeOfDay.midi.join(', ')}</Text>
-                  </View>
-
-                  <View style={styles.mealSection}>
-                    <Text style={styles.mealTitle}>Soir</Text>
-                    <Text>{item.mealsByTimeOfDay.soir.join(', ')}</Text>
-                  </View>
-                </View>
-              </View>
-            )}
-          </Pressable>
-        </View>
       </View>
+
+      <MealsByDay date={selectedDate} />
     </View>
   );
 };
 
-const styles = StyleSheet.create({
-  container: {
-    padding: 20,
-    backgroundColor: '#EFEFEF',
-    borderRadius: 10,
-  },
-  mealSection: {
-    marginBottom: 20,
-    padding: 10,
-    backgroundColor: 'white',
-    borderRadius: 10,
-  },
-  mealTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#639067',
-  },
-});
+const TimeButton = ({id, title, selectedTime, setSelectedTime}) => (
+  <TouchableOpacity
+    style={{
+      width: 90,
+      height: 22,
+      backgroundColor: selectedTime.id === id ? '#1d9913' : '#efefef',
+      borderRadius: 25,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 16,
+    }}
+    onPress={() => setSelectedTime({id, title})}>
+    <Text style={{color: 'black', fontSize: 15}}>{title}</Text>
+  </TouchableOpacity>
+);
 
 export default MealPlannerScreen;

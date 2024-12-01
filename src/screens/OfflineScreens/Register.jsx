@@ -1,22 +1,18 @@
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useState, useEffect, useMemo} from 'react';
 import {
   ActivityIndicator,
   Text,
-  TextInput,
-  TouchableOpacity,
   View,
   SafeAreaView,
+  TextInput,
+  TouchableOpacity,
   Image,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import {CommonActions, useNavigation} from '@react-navigation/native';
-import axios from 'axios';
-import {API_ROOT} from '../../constants/apiConstants';
+import api from '../../axiosConfig';
 import {useAuthContext} from '../../contexts/AuthContext';
-import {USER_INFOS} from '../../constants/appConstants';
-import {useDispatch} from 'react-redux';
-import {setUserDetail} from '../../redux/user/UserSlice';
+import {useNavigation} from '@react-navigation/native';
 
 const Register = ({setIsSignedIn}) => {
   const [email, setEmail] = useState('');
@@ -27,22 +23,20 @@ const Register = ({setIsSignedIn}) => {
   const [surname, setSurname] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isFormValid, setIsFormValid] = useState(false);
   const {signIn} = useAuthContext();
-  const dispatch = useDispatch();
-  // const [isSignedIn, setIsSignedIn] = React.useState(false);
-
   const navigation = useNavigation();
 
-  const validatePasswords = useCallback(() => {
+  const validatePasswords = () => {
     if (password !== confirmPassword) {
       setPasswordError('Les mots de passe ne correspondent pas');
       return false;
     }
     setPasswordError('');
     return true;
-  }, [password, confirmPassword]);
+  };
 
-  const validateForm = useCallback(() => {
+  const validateForm = () => {
     if (!email || !password || !name || !surname) {
       setError('Tous les champs sont obligatoires');
       return false;
@@ -57,52 +51,50 @@ const Register = ({setIsSignedIn}) => {
     }
     setError(null);
     return validatePasswords();
-  }, [email, password, name, surname, validatePasswords]);
+  };
 
-  const isFormValid = useMemo(() => validateForm(), [validateForm]);
+  useEffect(() => {
+    const isValid = validateForm();
+    setIsFormValid(isValid);
+  }, [email, password, name, surname, confirmPassword]);
 
   const handleSubmit = async () => {
-    if (!isFormValid) {
-      return;
-    }
+    if (!isFormValid) return;
     setIsLoading(true);
     setError(null);
 
     try {
-      const registerResponse = await axios.post(`${API_ROOT}/register`, {
-        name,
-        surname,
-        email,
+      // Première étape : Inscription
+      const registerResponse = await api.post('/api/register', {
+        nom: name,
+        prenom: surname,
+        email: email.trim(),
         password,
       });
 
-      console.log('Utilisateur enregistré avec succès:', registerResponse.data);
+      // Deuxième étape : Connexion automatique après inscription
+      const loginResponse = await api.post('/api/login_check', {
+        email: email.trim(),
+        password,
+      });
 
-      const userData = registerResponse.data;
-
-      const user = {
-        id: userData.id,
-        email: userData.email,
-        name: userData.name,
-        surname: userData.surname,
-        meals: userData.meals,
-      };
-      signIn(user);
-
-
-      setIsSignedIn(true);
-      console.log('Connexion reussie');
-    } catch (error) {
-      console.log('Erreur:', error.response?.data || error.message);
-      if (error.response?.data?.message) {
-        setError(error.response.data.message);
-      } else {
-        setError("Erreur lors de l'enregistrement, veuillez réessayer.");
+      if (loginResponse.data.userId) {
+        const userData = {
+          id: loginResponse.data.userId,
+          nom: loginResponse.data.nom,
+          prenom: loginResponse.data.prenom,
+        };
+        await signIn(userData);
+        setIsSignedIn(true); // Met à jour l'état de connexion global
       }
+    } catch (error) {
+      console.error('Erreur détaillée:', error.response?.data || error.message);
+      setError(error.response?.data?.error || "Erreur lors de l'inscription");
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -115,7 +107,7 @@ const Register = ({setIsSignedIn}) => {
         <View className="mb-5">
           <Text className="text-[#639067] text-base font-bold mb-1">Nom</Text>
           <TextInput
-            className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+            className="bg-[#d9d9d9]  text-[#639067] rounded-lg h-10 px-2.5"
             placeholder="Votre nom"
             value={name}
             onChangeText={setName}
@@ -127,7 +119,7 @@ const Register = ({setIsSignedIn}) => {
             Prenom
           </Text>
           <TextInput
-            className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+            className="bg-[#d9d9d9]  text-[#639067] rounded-lg h-10 px-2.5"
             placeholder="Votre prénom"
             value={surname}
             onChangeText={setSurname}
@@ -139,7 +131,7 @@ const Register = ({setIsSignedIn}) => {
             Adresse Mail
           </Text>
           <TextInput
-            className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+            className="bg-[#d9d9d9]  text-[#639067] rounded-lg h-10 px-2.5"
             placeholder="Votre email"
             value={email}
             onChangeText={setEmail}
@@ -152,19 +144,20 @@ const Register = ({setIsSignedIn}) => {
             Mot de passe
           </Text>
           <TextInput
-            className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+            className="bg-[#d9d9d9] text-[#639067] rounded-lg h-10 px-2.5"
             placeholder="Votre mot de passe"
             value={password}
             onChangeText={setPassword}
             secureTextEntry
           />
         </View>
+
         <View className="mb-5">
-          <Text className="text-[#639067] text-base font-bold mb-1">
+          <Text className="text-[#639067]  text-base font-bold mb-1">
             Confirmer votre mot de passe
           </Text>
           <TextInput
-            className="bg-[#d9d9d9] rounded-lg h-10 px-2.5"
+            className="bg-[#d9d9d9]  text-[#639067] rounded-lg h-10 px-2.5"
             placeholder="Confirmer votre mot de passe"
             value={confirmPassword}
             onChangeText={setConfirmPassword}
@@ -194,7 +187,7 @@ const Register = ({setIsSignedIn}) => {
           </TouchableOpacity>
         )}
 
-        <Text className="text-center mt-5 text-sm">
+        <Text className="text-center mt-5 text-[#639067] text-sm">
           Déjà un compte,{' '}
           <Text
             className="text-[#639067] font-bold"

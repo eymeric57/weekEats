@@ -7,9 +7,8 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
+  Alert,
 } from 'react-native';
-import {useDispatch} from 'react-redux';
-import UserSlice, {setUserDetail} from '../../redux/user/UserSlice';
 import api from '../../axiosConfig';
 import {useAuthContext} from '../../contexts/AuthContext';
 
@@ -20,67 +19,44 @@ const Login = ({navigation, setIsSignedIn}) => {
   const [error, setError] = useState(null);
   const {signIn} = useAuthContext();
 
-  const handleSubmit = () => {
-    setIsLoading(true);
-    setError(null);
-
-    const timeoutId = setTimeout(() => {
-      setIsLoading(false);
-      setError('La connexion a pris trop de temps. Veuillez réessayer.');
-    }, 10000);
-
-    api
-      .post('/login', {email, password})
-      .then(response => {
-        clearTimeout(timeoutId);
-        console.log('Réponse du serveur:', response.data);
-
-        if (response.data) {
-
-          const user = {
-            id: response.data.id,
-            email: response.data.email,
-            name: response.data.name,
-            surname: response.data.surname,
-            meals: response.data.meals,
-          };
-
-          try {
-            signIn(user);
-            setIsSignedIn(true);
-          } catch (error) {
-            console.error(
-              "Erreur lors de la connexion de l'utilisateur:",
-              error.message,
-            );
-            setError("Une erreur est survenue lors de la connexion. Veuillez réessayer.");
-          }
-        }
-      })
-      .catch(error => {
-        clearTimeout(timeoutId);
-        console.error('Erreur:', error.message);
-        if (error.response) {
-          console.error('Response data:', error.response.data);
-          console.error('Response status:', error.response.status);
-          console.error('Response headers:', error.response.headers);
-          setError("Une erreur est survenue. Veuillez vérifier vos informations et réessayer.");
-        } else if (error.request) {
-          console.error('Request data:', error.request);
-          setError("Impossible de contacter le serveur. Veuillez vérifier votre connexion internet.");
-        } else {
-          console.error('Error message:', error.message);
-          setError(error.message);
-        }
-      })
-      .finally(() => {
-        clearTimeout(timeoutId);
-        setIsLoading(false);
-      });
+  const validateInputs = () => {
+    if (!email || !password) {
+      setError('Veuillez remplir tous les champs');
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Adresse email invalide');
+      return false;
+    }
+    return true;
   };
 
+  // Login.js
+  const handleSubmit = async () => {
+    try {
+      setIsLoading(true);
+      const response = await api.post('/api/login_check', {
+        email: email.trim(),
+        password: password,
+      });
 
-
+      if (response.data.userId) {
+        const userData = {
+          id: response.data.userId,
+          nom: response.data.nom,
+          prenom: response.data.prenom,
+          email: response.data.email,
+        };
+        await signIn(userData);
+        setIsSignedIn(true);
+      }
+    } catch (error) {
+      console.error('Erreur:', error.response?.data || error.message);
+      setError(error.response?.data?.error || 'Erreur de connexion');
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <SafeAreaView className="flex-1 p-4 bg-white">
       <Text
@@ -133,7 +109,7 @@ const Login = ({navigation, setIsSignedIn}) => {
         </TouchableOpacity>
       )}
 
-      <Text className="text-center font-bold mt-5 text-sm">
+      <Text className="text-center mt-5 text-sm text-[#639067]">
         Pas encore de compte ?{' '}
         <Text
           className="text-[#639067] font-bold"

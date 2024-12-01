@@ -1,9 +1,12 @@
 import {createSelector} from '@reduxjs/toolkit';
 
-const selectLoading = state => state.planing.loading;
-const selectPlanningDetail = state => state.planing.planningDetail;
+const selectPlaningState = state => state.planing;
 
 export const selectPlanningData = createSelector(
-  [selectPlanningDetail, selectLoading],
-  (planningDetail, loading) => ({planningDetail, loading}),
+  [selectPlaningState],
+  planingState => ({
+    planningDetail: planingState.plannings,
+    loading: planingState.loading,
+    error: planingState.error,
+  }),
 );
